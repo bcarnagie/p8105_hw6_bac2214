@@ -93,9 +93,10 @@ ggplot(cities_OR_CI, aes(x = reorder(city_state, OR), y = OR)) +
   geom_point() +
   geom_errorbar(aes(ymin = CI_lower, ymax = CI_upper), width = 0.2) +
   coord_flip() +  # Flips the axes for horizontal orientation
-  labs(title = "Adjusted Odds Ratios for Solving Homicides (Male vs Female Victims)",
+  labs(title = "Estimated Odds Ratios for Solving Homicides (Male vs Female Victims)",
        x = "City",
-       y = "Adjusted Odds Ratio")
+       y = "Estimated Odds Ratio")
 
 ```
 
+Fresno has the highest odds of solving homicides comparing male victims to female victims, while New York has the lowest odds. Fresno has a really wide CI, indicating greater variability in the data
