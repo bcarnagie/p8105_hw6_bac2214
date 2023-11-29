@@ -147,7 +147,6 @@ log_beta_product_ci <- quantile(bootstrap_estimates$estimate, probs = c(0.025, 0
 * The CI for log(beta1 * beta2) is `r sprintf("%.2f", log_beta_product_ci[1])` to `r sprintf("%.2f", log_beta_product_ci[2])`.
 
 
-
 ## Question 3
 
 
