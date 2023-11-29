@@ -63,7 +63,6 @@ baltimore_log_model |>
 Here I iterate the process to run a glm for all cities in my dataset:
 ```{r}
 
-
 fit_glm_OR = function(df) {
   model = glm(homicide_solved ~ victim_age + victim_sex + victim_race, 
                data = df, 
@@ -80,11 +79,9 @@ fit_glm_OR = function(df) {
   return(tidy_model)
 }
 
-cities_OR_CI <- homicide_df |> 
-  split(.$city_state) |> 
+cities_OR_CI <- homicide_df %>%
+  split(.$city_state) %>%
   map_dfr(fit_glm_OR, .id = "city_state")
-
-
 ```
 
 Here's a plot:
@@ -99,4 +96,58 @@ ggplot(cities_OR_CI, aes(x = reorder(city_state, OR), y = OR)) +
 
 ```
 
-Fresno has the highest odds of solving homicides comparing male victims to female victims, while New York has the lowest odds. Fresno has a really wide CI, indicating greater variability in the data
+Fresno has the highest odds of solving homicides comparing male victims to female victims, while New York has the lowest odds. Fresno has a really wide CI, indicating greater variability in the data.
+
+## Question 2
+```{r,message=FALSE}
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2022-01-01",
+    date_max = "2022-12-31") |>
+  mutate(
+    name = recode(id, USW00094728 = "CentralPark_NY"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) |>
+  select(name, id, everything())
+
+suppressWarnings({
+bootstrap_function <- function(data) {
+  model <- lm(tmax ~ tmin + prcp, data = data)
+  r_squared <- broom::glance(model)$r.squared
+  log_beta_product <- log(broom::tidy(model)[2, "estimate"] * broom::tidy(model)[3, "estimate"])
+  return(data.frame(r_squared = r_squared, log_beta_product = log_beta_product))
+}
+
+set.seed(123)  
+bootstrap_estimates <- replicate(5000, sample_n(weather_df, size = n(), replace = TRUE), simplify = FALSE) %>%
+  map_dfr(bootstrap_function) 
+})
+```
+
+Here are some plots:
+```{r}
+ggplot(bootstrap_estimates, aes(x = r_squared)) +
+  geom_histogram( fill = "pink2", alpha = 0.7) +
+  labs(title = "Bootstrap Distribution of R-squared", x = "R-squared", y = "Frequency")
+
+ggplot(bootstrap_estimates, aes(x = estimate)) +
+  geom_histogram(fill = "green3") +
+  labs(title = "Distribution of Bootstrap Estimates of log(beta1 * beta2)",
+       x = "log(beta1 * beta2) Estimate")
+
+
+r_squared_ci <- quantile(bootstrap_estimates$r_squared, probs = c(0.025, 0.975))
+log_beta_product_ci <- quantile(bootstrap_estimates$estimate, probs = c(0.025, 0.975), na.rm = TRUE)
+
+print(r_squared_ci)
+print(log_beta_product_ci)
+```
+
+The Bootstrap Distribution of R-squared is slightly right-skewed while the Bootstrap Distribution of log(beta1 * beta2) is skewed right significantly. The CI for r_squared is `r sprintf("%.2f", r_squared_ci[1])` to `r sprintf("%.2f", r_squared_ci[2])`, and the CI for log(beta1 * beta2) is `r sprintf("%.2f", log_beta_product_ci[1])` to `r sprintf("%.2f", log_beta_product_ci[2])`.
+
+
+## Question 3
+
+
