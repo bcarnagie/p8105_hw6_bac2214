@@ -4,27 +4,98 @@ author: "Brianna Carnagie"
 date: "2023-11-28"
 output: github_document
 ---
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+|
+```{r, message=FALSE, echo=FALSE}
+library(tidyverse)
+library(broom)
+library(dplyr)
+library(purrr)
+library(ggplot2)
 ```
 
-## R Markdown
+## Question 1
+In this first step, here is what I did:
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+ * A city_state variable was created.
+ * A binary variable homicide_solved was added to indicate whether the homicide is solved.
+ * Homicides from the cities Dallas, TX; Phoenix, AZ; Kansas City, MO were omitted. 
+ * The analysis was limited to cases where victim_race is white or black.
+ * victim_age was converted to a numeric format (and non-numeric values were coerced into NAs).
+```{r setup, message=FALSE}
+homicide_df = read_csv("data/homicide-data.csv") |> 
+   mutate(
+    city_state = paste(city, state, sep = ", "),
+    homicide_solved = ifelse(grepl("closed", disposition, ignore.case = TRUE), 1, 0)
+  ) |> 
+  filter(!city_state %in% c("Dallas, TX", "Phoenix, AZ", "Kansas City, MO", "Tulsa, AL")) %>%
+  filter(victim_race %in% c("White", "Black")) |> 
+  mutate(victim_age = as.numeric(victim_age))
 ```
 
-## Including Plots
+In the next step, I attempt to make the log regression for Baltimore, MD and obtain the estimate and confidence interval of the adjusted odds ratio for solving homicides comparing male victims to female victims keeping all other variables fixed.
 
-You can also embed plots, for example:
+```{r}
+baltimore_df = filter(homicide_df, city_state == "Baltimore, MD")
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+baltimore_log_model = glm(homicide_solved ~ victim_age + victim_sex + victim_race, 
+                       data = baltimore_df, family = binomial())
+
+baltimore_log_model |> 
+  broom::tidy() |> 
+  mutate(
+    OR = exp(estimate),
+    CI_lower = exp(estimate - 1.96 * std.error),
+    CI_upper = exp(estimate + 1.96 * std.error)
+  ) |> 
+  select(term, OR, CI_lower, CI_upper) |> 
+  knitr::kable(digits = 3)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+**Key findings:**
+
+* Intercept *(not interpretable)*: The odds of a homicide being solved when the victim is a 0-years old, black female is 1.92.
+* For every one year increase in age, we expect the odds of their homicide being solved to decrease by 0.995
+* The odds of a male victim having their homicide solved is 0.355 times the odds of a women having their homicide solved, holding all other factors constant.
+* Being white significantly increases the odds of their homicide being solved, compared to being black.
+* Victim age does not appear to be a significant predictor at the common 0.05 significance level (p>0.05).
+
+
+Here I iterate the process to run a glm for all cities in my dataset:
+```{r}
+
+
+fit_glm_OR = function(df) {
+  model = glm(homicide_solved ~ victim_age + victim_sex + victim_race, 
+               data = df, 
+               family = binomial())
+  
+  tidy_model = broom::tidy(model) |> 
+    mutate(
+      OR = exp(estimate),
+      CI_lower = exp(estimate - 1.96 * std.error),
+      CI_upper = exp(estimate + 1.96 * std.error)
+    ) |> 
+    filter(term == "victim_sexMale") |> 
+    select(term, OR, CI_lower, CI_upper)
+  return(tidy_model)
+}
+
+cities_OR_CI <- homicide_df |> 
+  split(.$city_state) |> 
+  map_dfr(fit_glm_OR, .id = "city_state")
+
+
+```
+
+Here's a plot:
+```{r}
+ggplot(cities_OR_CI, aes(x = reorder(city_state, OR), y = OR)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = CI_lower, ymax = CI_upper), width = 0.2) +
+  coord_flip() +  # Flips the axes for horizontal orientation
+  labs(title = "Adjusted Odds Ratios for Solving Homicides (Male vs Female Victims)",
+       x = "City",
+       y = "Adjusted Odds Ratio")
+
+```
+
