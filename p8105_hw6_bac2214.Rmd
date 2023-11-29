@@ -126,7 +126,7 @@ bootstrap_estimates <- replicate(5000, sample_n(weather_df, size = n(), replace 
 })
 ```
 
-Here are some plots:
+Here are some plots for Bootstrap Distribution of R-squared & Distribution of Bootstrap Estimates of log(beta1 * beta2):
 ```{r}
 ggplot(bootstrap_estimates, aes(x = r_squared)) +
   geom_histogram( fill = "pink2", alpha = 0.7) +
@@ -137,15 +137,15 @@ ggplot(bootstrap_estimates, aes(x = estimate)) +
   labs(title = "Distribution of Bootstrap Estimates of log(beta1 * beta2)",
        x = "log(beta1 * beta2) Estimate")
 
-
 r_squared_ci <- quantile(bootstrap_estimates$r_squared, probs = c(0.025, 0.975))
 log_beta_product_ci <- quantile(bootstrap_estimates$estimate, probs = c(0.025, 0.975), na.rm = TRUE)
-
-print(r_squared_ci)
-print(log_beta_product_ci)
 ```
 
-The Bootstrap Distribution of R-squared is slightly right-skewed while the Bootstrap Distribution of log(beta1 * beta2) is skewed right significantly. The CI for r_squared is `r sprintf("%.2f", r_squared_ci[1])` to `r sprintf("%.2f", r_squared_ci[2])`, and the CI for log(beta1 * beta2) is `r sprintf("%.2f", log_beta_product_ci[1])` to `r sprintf("%.2f", log_beta_product_ci[2])`.
+* The Bootstrap Distribution of R-squared is slightly right-skewed while 
+* The CI for r_squared is `r sprintf("%.2f", r_squared_ci[1])` to `r sprintf("%.2f", r_squared_ci[2])`, 
+* The Bootstrap Distribution of log(beta1 * beta2) is skewed right significantly. 
+* The CI for log(beta1 * beta2) is `r sprintf("%.2f", log_beta_product_ci[1])` to `r sprintf("%.2f", log_beta_product_ci[2])`.
+
 
 
 ## Question 3
