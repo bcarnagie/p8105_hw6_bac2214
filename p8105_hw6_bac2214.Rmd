@@ -6,11 +6,13 @@ output: github_document
 ---
 |
 ```{r, message=FALSE, echo=FALSE}
-library(tidyverse)
-library(broom)
+library(readr)
 library(dplyr)
-library(purrr)
 library(ggplot2)
+library(modelr)
+library(purrr)
+library(tidyr)
+library(broom)
 ```
 
 ## Question 1
@@ -182,6 +184,30 @@ my_model_summary_stats= broom::tidy(my_model)
 
 * My interaction term accounts for the fact that the effect of gestational age on birth weight might differ for babies of smokers compared to non-smokers.
 
+Below is my plot of residuals against fitted values
+# Model diagnostics: 
+```{r}
+birthweight_data = birthweight_df |> 
+  add_predictions(my_model, var = "pred") |> 
+  add_residuals(my_model, var = "resid")
 
+ggplot(birthweight_data, aes(x = pred, y = resid)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Residuals vs Fitted Values", x = "Fitted Values", y = "Residuals")
+```
+
+Here I compare my proposed model to two other models in terms of cross-validated prediction error:
+```{r}
+model1 <- lm(bwt ~ blength + gaweeks, data = birthweight_data)
+
+model2 <- lm(bwt ~ bhead * blength * babysex, data = birthweight_data)
+
+```
+
+
+
+
+```
 
 
