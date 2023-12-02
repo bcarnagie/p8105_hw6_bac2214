@@ -170,4 +170,18 @@ my_model_summary_stats= broom::tidy(my_model)
 
 ```
 
+* gaweeks: The duration of the pregnancy is a strong predictor of birth weight; full-term babies typically weigh more than pre-term babies.
+
+* smoken: Smoking has been linked to lower birth weight, so including this variable can help account for its negative effect on the baby's weight.
+
+* momage: Maternal age can be a factor in birth weight, with teen mothers and older mothers often having different risks for low birth weight.
+
+* parity: The number of previous pregnancies can affect birth weight, as the uterus environment changes with each pregnancy.
+
+* wtgain: Adequate weight gain during pregnancy is critical for fetal growth. Insufficient or excessive weight gain can both negatively affect birth weight.
+
+* My interaction term accounts for the fact that the effect of gestational age on birth weight might differ for babies of smokers compared to non-smokers.
+
+
+
 
