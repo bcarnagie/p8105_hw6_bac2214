@@ -27,7 +27,7 @@ homicide_df = read_csv("data/homicide-data.csv") |>
     city_state = paste(city, state, sep = ", "),
     homicide_solved = ifelse(grepl("closed", disposition, ignore.case = TRUE), 1, 0)
   ) |> 
-  filter(!city_state %in% c("Dallas, TX", "Phoenix, AZ", "Kansas City, MO", "Tulsa, AL")) %>%
+  filter(!city_state %in% c("Dallas, TX", "Phoenix, AZ", "Kansas City, MO", "Tulsa, AL")) |> 
   filter(victim_race %in% c("White", "Black")) |> 
   mutate(victim_age = as.numeric(victim_age))
 ```
@@ -148,7 +148,7 @@ log_beta_product_ci <- quantile(bootstrap_estimates$estimate, probs = c(0.025, 0
 
 ## Question 3
 
-I staretd this question off by importing the dataset and making factors for the categorical variables! 
+I started this question off by importing the dataset and making factors for the categorical variables! 
 ```{r}
 birthweight_df = read_csv("data/birthweight.csv") |> 
   mutate(
@@ -161,28 +161,13 @@ birthweight_df = read_csv("data/birthweight.csv") |>
   na.omit() 
 ```
 
-
+This is my proposed regression model for birthweight.
 ```{r}
 
-my_model = lm(bwt ~ blength + gaweeks + ppbmi + smoken + momage + parity + wtgain, data = birthweight_df)
+my_model <- lm(bwt ~ blength * gaweeks + ppbmi * smoken + momage * parity + wtgain, data = birthweight_df)
 
 my_model_summary_stats= broom::tidy(my_model) 
 
 ```
-
-
-
-# Model diagnostics: plot of residuals against fitted values
-birthweight_data <- birthweight_df |> 
-  add_predictions(model, var = "pred") |> 
-  add_residuals(model, var = "resid")
-
-ggplot(birthweight_data, aes(x = pred, y = resid)) +
-  geom_point(alpha = 0.5) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  labs(title = "Residuals vs Fitted Values", x = "Fitted Values", y = "Residuals")
-
-```
-
 
 
