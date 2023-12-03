@@ -13,6 +13,8 @@ library(modelr)
 library(purrr)
 library(tidyr)
 library(broom)
+library(modelr)
+library(mgcv)
 ```
 
 ## Question 1
@@ -199,15 +201,50 @@ ggplot(birthweight_data, aes(x = pred, y = resid)) +
 
 Here I compare my proposed model to two other models in terms of cross-validated prediction error:
 ```{r}
-model1 <- lm(bwt ~ blength + gaweeks, data = birthweight_data)
+model1 = lm(bwt ~ blength + gaweeks, data = birthweight_data)
 
-model2 <- lm(bwt ~ bhead * blength * babysex, data = birthweight_data)
+model2 = lm(bwt ~ bhead * blength * babysex, data = birthweight_data)
+
+
+set.seed(123)
+cv_df = crossv_mc(birthweight_data, 100) 
+
+calc_pred_error <- function(test_data, model) {
+  if (any(colnames(test_data) %in% names(coefficients(model)))) {
+    predictions <- predict(model, newdata = test_data)
+    mse <- mean((test_data$bwt - predictions)^2, na.rm = TRUE)  # Ensure to remove NA values
+    return(mse)
+  } else {
+    return(NA)  # Return NA if necessary predictors are missing
+  }
+}
+
+# Re-run the error calculation
+error_model <- cv_df %>% 
+  mutate(
+    error_proposed = map_dbl(test, ~calc_pred_error(.x, my_model))
+  )
+
+error_model1 <- cv_df %>% 
+  mutate(
+    error_model1 = map_dbl(test, ~calc_pred_error(.x, model1))
+  )
+
+error_model2 <- cv_df %>% 
+  mutate(
+    error_model2 = map_dbl(test, ~calc_pred_error(.x, model2))
+  )
+
+# Calculate the mean of the errors, ensuring to remove NA values
+error_summary <- tibble(
+  error_proposed = mean(error_model$error_proposed, na.rm = TRUE),
+  error_model1 = mean(error_model1$error_model1, na.rm = TRUE),
+  error_model2 = mean(error_model2$error_model2, na.rm = TRUE)
+)
+
+print(error_summary)
 
 ```
 
-
-
-
-```
 
 
